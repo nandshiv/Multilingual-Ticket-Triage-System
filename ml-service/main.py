@@ -1,4 +1,18 @@
 import contextlib
+import os
+import gc
+
+# Force PyTorch and underlying libraries to use only 1 thread to minimize memory allocation
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+
+import torch
+torch.set_num_threads(1)
+torch.set_grad_enabled(False) # Disable gradient tracking globally to save RAM
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
@@ -17,12 +31,12 @@ classifier = None
 async def lifespan(app: FastAPI):
     global model, vectorizer, classifier
     
-    # 1. Load actual multilingual Sentence Transformer
-    # paraphrase-multilingual-MiniLM-L12-v2 produces 384d embeddings
-    model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+    # 1. Load the lightweight E5 multilingual model (229MB vs 470MB)
+    # Output dimension is exactly 384 (perfectly matches pgvector schema)
+    # Specifying device='cpu' to prevent PyTorch from initiating CUDA libraries
+    model = SentenceTransformer('intfloat/multilingual-e5-small', device='cpu')
     
-    # 2. Train a baseline TF-IDF + Logistic Regression classifier on startup
-    # In a real scenario, this would load a pre-trained pickle file
+    # 2. Train baseline classifier
     train_texts = [
         "How do I reset my password?",
         "My account is locked",
@@ -40,8 +54,10 @@ async def lifespan(app: FastAPI):
     classifier = LogisticRegression()
     classifier.fit(X_train, train_labels)
     
+    # Clean up garbage collector immediately after loading to free memory
+    gc.collect()
     yield
-    # Cleanup if needed
+    # Cleanup
 
 app = FastAPI(title="Triage ML Service", lifespan=lifespan)
 
@@ -70,7 +86,6 @@ def translate(request: TextRequest):
         else:
             return TranslationResponse(translated_text=request.text, detected_language='en')
     except Exception as e:
-        # Fallback gracefully
         return TranslationResponse(translated_text=request.text, detected_language="en")
 
 @app.post("/classify", response_model=ClassificationResponse)
@@ -83,6 +98,8 @@ def classify(request: TextRequest):
 
 @app.post("/embed", response_model=EmbeddingResponse)
 def embed(request: TextRequest):
-    # Generates exact 384-dimensional vector required by pgvector schema
-    emb = model.encode(request.text).tolist()
+    # E5 models expect search inputs to be prefixed with "query: " 
+    text_to_embed = f"query: {request.text}"
+    with torch.no_grad():
+        emb = model.encode(text_to_embed).tolist()
     return EmbeddingResponse(embedding=emb)
