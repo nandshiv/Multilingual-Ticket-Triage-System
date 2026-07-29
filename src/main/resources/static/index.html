@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Triage Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="navbar">
+        <div class="brand">Intelligent Ticket Triage</div>
+        <button id="theme-toggle" class="btn-outline">🌙 Dark Mode</button>
+    </header>
+    
+    <main class="dashboard">
+        <!-- Sidebar Filters -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3>Views</h3>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-view="view-inbox">Inbox (Priority)</li>
+                <li data-view="view-clusters">Clusters</li>
+                <li data-view="view-analytics">Analytics</li>
+            </ul>
+
+            <div class="filter-group" id="filter-box">
+                <label>Filter by Status</label>
+                <select id="status-filter" class="form-select">
+                    <option value="ALL">All Active</option>
+                    <option value="NEW">New</option>
+                    <option value="MERGED">Merged (Clustered)</option>
+                    <option value="RESOLVED">Resolved</option>
+                </select>
+                <button id="refresh-btn" class="btn-primary full-width" style="margin-top: 10px;">Apply & Refresh</button>
+            </div>
+        </aside>
+
+        <!-- Main Ticket Queue (Inbox) -->
+        <section class="queue-container active" id="view-inbox">
+            <div class="table-wrapper">
+                <table class="ticket-table">
+                    <thead>
+                        <tr>
+                            <th>Score</th>
+                            <th>Status</th>
+                            <th>Subject (Translated)</th>
+                            <th>Customer</th>
+                            <th>Category</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticket-body">
+                        <tr class="empty-state"><td colspan="6">Loading tickets...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Clusters View -->
+        <section class="queue-container hidden" id="view-clusters">
+            <div class="table-wrapper">
+                <table class="ticket-table">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Root Ticket Subject</th>
+                            <th>Ticket Count</th>
+                            <th>Created At</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cluster-body">
+                        <tr class="empty-state"><td colspan="5">Loading clusters...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Analytics View -->
+        <section class="queue-container hidden" id="view-analytics">
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px;">
+                <div class="chart-container">
+                    <h3>Ticket Volume by Category</h3>
+                    <canvas id="volumeChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3>Language Distribution</h3>
+                    <canvas id="languageChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-container" style="width: 100%;">
+                <h3>ML Routing Accuracy</h3>
+                <div id="accuracy-stats" style="margin-top: 20px; font-size: 1.2rem;"></div>
+            </div>
+        </section>
+
+        <!-- Slide-out Ticket Detail Panel -->
+        <aside class="ticket-detail-panel" id="detail-panel">
+            <div class="panel-header">
+                <h2>Ticket Review</h2>
+                <button id="close-panel" class="btn-icon">&times;</button>
+            </div>
+            
+            <div class="panel-content">
+                <div class="detail-section">
+                    <div class="badge-row">
+                        <span id="detail-category" class="badge">Category</span>
+                        <span id="detail-confidence" class="badge outline">Confidence</span>
+                    </div>
+                </div>
+
+                <div class="detail-section">
+                    <h4>Original Text <span id="detail-lang" class="text-mute"></span></h4>
+                    <div id="detail-original" class="text-box original-text"></div>
+                </div>
+                
+                <div class="detail-section">
+                    <h4>Translated to English</h4>
+                    <div id="detail-translated" class="text-box"></div>
+                </div>
+
+                <div class="detail-section">
+                    <h4>Explainable Priority (Score: <span id="detail-score">0</span>)</h4>
+                    <div id="detail-breakdown" class="breakdown-box"></div>
+                </div>
+                
+                <div class="action-bar" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div>
+                        <label class="text-mute" style="font-size: 0.85rem;">Reassign Team</label>
+                        <select id="reassign-team-select" class="form-select full-width"></select>
+                    </div>
+                    <button id="btn-reassign" class="btn-outline full-width">Confirm Reassignment</button>
+                    <button id="btn-resolve" class="btn-primary full-width">Mark as Resolved</button>
+                </div>
+            </div>
+        </aside>
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>

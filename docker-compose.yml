@@ -1,0 +1,22 @@
+services:
+  db:
+    image: ankane/pgvector:v0.5.1 # Uses the official pgvector image based on Postgres 15+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ticket_triage
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  ml-service:
+    build: 
+      context: ./ml-service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./ml-service:/app
+
+volumes:
+  postgres_data:
