@@ -18,6 +18,7 @@ public class TicketService {
     private final TicketClusterRepository clusterRepository;
     private final TeamRepository teamRepository;
     private final RoutingLogRepository routingLogRepository;
+    private final AgentRepository agentRepository;
 
     public TicketService(TicketRepository ticketRepository, 
                          CustomerRepository customerRepository, 
@@ -25,7 +26,8 @@ public class TicketService {
                          TicketEmbeddingRepository embeddingRepository,
                          TicketClusterRepository clusterRepository,
                          TeamRepository teamRepository,
-                         RoutingLogRepository routingLogRepository) {
+                         RoutingLogRepository routingLogRepository,
+                         AgentRepository agentRepository) {
         this.ticketRepository = ticketRepository;
         this.customerRepository = customerRepository;
         this.mlServiceClient = mlServiceClient;
@@ -33,6 +35,7 @@ public class TicketService {
         this.clusterRepository = clusterRepository;
         this.teamRepository = teamRepository;
         this.routingLogRepository = routingLogRepository;
+        this.agentRepository = agentRepository;
     }
 
     public Ticket processNewTicket(TicketRequest request) {
