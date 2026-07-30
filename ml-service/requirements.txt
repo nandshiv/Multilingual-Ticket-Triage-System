@@ -1,10 +1,14 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
-numpy<2.0.0
+
+numpy==1.26.4
+
 torch==2.4.0+cpu
+transformers==4.44.2
+sentence-transformers==3.0.1
+
 fastapi
 uvicorn
 pydantic
-sentence-transformers
 scikit-learn
 langdetect
 deep-translator
